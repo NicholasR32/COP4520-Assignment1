@@ -5,12 +5,22 @@
 
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.atomic.*;
 
-public class primesbasic
+// ANSWER: there are 5761455 primes < 10^8
+
+// Apparently, the Java docs for Thread use PrimeThread as an example class. What a coincidence
+// https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html
+public class PrimeThread extends Thread
 {
-    // Some global trackers. not best practice ik
-    public static int sumPrimes = 0;
-    public static int numPrimes = 0;
+    // Must use AtomicIntegers since primitive ints aren't thread safe
+    public static AtomicLong numPrimes = new AtomicLong(0);
+    public static AtomicLong sumPrimes = new AtomicLong(0);
+
+    public static FileWriter writer = null;
+
+    private int lowerbound;
+    private int upperbound;
 
     public static void main(String[] args) throws IOException
     {
@@ -21,12 +31,25 @@ public class primesbasic
             File out = new File("primes.txt");
             if (out.exists()) out.delete();
             out.createNewFile();
-            FileWriter writer = new FileWriter("primes.txt");
+            writer = new FileWriter("primes.txt");
 
             // Record program running time
             final long start = System.nanoTime();
+
+            // Create threads and distribute computation
+            int numThreads = 8;
             int upperbound = 100000000;
-            findPrimes(0, upperbound, writer);
+            int numsPerThread = upperbound / numThreads;
+            for (int i = 0; i < numThreads; i++)
+            {
+                int low = i * numsPerThread;
+                int high = (i+1) * (numsPerThread) - 1;
+
+                PrimeThread thread = new PrimeThread(low, high);
+                thread.start();
+                System.out.println("Thread " + i + " started; checking [" + thread.lowerbound + "," + thread.upperbound + "]");
+                //System.out.println("Thread " + i + " done");
+            }
 
             writer.close();
 
@@ -40,6 +63,36 @@ public class primesbasic
         }
     }
 
+    public PrimeThread(int lowerbound, int upperbound)
+    {
+        this.lowerbound = lowerbound;
+        this.upperbound = upperbound;
+    }
+
+    public void run()
+    {
+        int numPrimesFound = 0;
+        long sumPrimesFound = 0;
+        for (int i = this.lowerbound; i <= this.upperbound; i++)
+        {
+            if (isPrime(i))
+            {
+                numPrimesFound++;
+                sumPrimesFound += i;
+                try
+                {
+                    writer.write(i + "\n");
+                }
+                catch (IOException e)
+                {}
+            }
+        }
+        System.out.println("found " + numPrimesFound);
+        numPrimes.addAndGet(numPrimesFound);
+        System.out.println("total: " + numPrimes);
+        sumPrimes.addAndGet(sumPrimesFound);
+        System.out.println("total sum: " + sumPrimes);
+    }
     // This primality test uses a common improvement of trial division,
     // using the fact that every prime is of the form 6k+1, or 6k-1,
     // for positive integer k.
@@ -53,26 +106,13 @@ public class primesbasic
 
     // Method: Another way to implement trial division is to divide n by
     // every prime below or equal to sqrt(n), instead of every number,
-    // since if you check divisibility by a prime, checking divisibility 
+    // since if you check divisibility by a prime, checking divisibility
     // by all its multiples is unnecessary.
     // However, this requires building a list of known primes with no gaps,
     // which would be painful for me to synchronize.
 
     // Doing trial division by every number of the form 6k+1 or 6k-1
     // guarantees we test divisibility by every prime <= sqrt(n).
-
-    public static void findPrimes(int lowerbound, int upperbound, FileWriter writer) throws IOException
-    {
-        for (int i = lowerbound; i <= upperbound; i++)
-        {
-            if (isPrime(i))
-            {
-                sumPrimes += i;
-                numPrimes++;
-                writer.write(i + "\n");
-            }
-        }
-    }
 
     // This primality test implements the algorithm in the README.
     public static boolean isPrime(int n)
