@@ -5,13 +5,11 @@
 
 import java.util.*;
 import java.io.*;
-import java.util.concurrent.atomic.*;
 
 // ANSWER: there are 5761455 primes < 10^8
 // The sum is 279209790387276
 
-// Apparently, the Java docs for Thread use PrimeThread as an example class. What a coincidence
-// https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html
+
 
 public class Main
 {
@@ -19,6 +17,7 @@ public class Main
     public static int UPPER_BOUND = 100000000;
 
     public static FileWriter writer = null;
+    public static boolean DEBUG = true;
 
     public static void main(String[] args) throws IOException
     {
@@ -44,32 +43,37 @@ public class Main
 
                 threads[i] = new PrimeThread(low, high);
                 threads[i].start();
-                System.out.println("Thread " + i + " started; checking [" + threads[i].lowerbound + "," + threads[i].upperbound + "]");
+                if (DEBUG) System.out.println("Thread " + i + " started; checking [" + threads[i].lowerbound + "," + threads[i].upperbound + "]");
             }
 
             int numPrimes = 0;
             long sumPrimes = 0;
 
-            // Iterate over all threads and ensure they finish execution, and sum totals
+            // Iterate over all threads and ensure they finish execution, then sum totals
             try
             {
                 for (int i = 0; i < NUM_THREADS; i++)
                 {
                     threads[i].join();
-                    System.out.println("Thread " + i + " finished:");
-                    System.out.println("found " + threads[i].numPrimesFound + " primes");
-                    System.out.println("sum: " + threads[i].sumPrimesFound);
+                    if (DEBUG) System.out.println("Thread " + i + " finished:");
+                    if (DEBUG) System.out.println("found " + threads[i].numPrimesFound + " primes");
+                    if (DEBUG) System.out.println("sum: " + threads[i].sumPrimesFound);
                     numPrimes += threads[i].numPrimesFound;
                     sumPrimes += threads[i].sumPrimesFound;
                 }
             }
             catch (InterruptedException e)
-            {}
-            writer.close();
+            {
+                e.printStackTrace();
+            }
 
+            // Stop timer
             final long end = System.nanoTime();
+            long runtime = (end - start) / 1000000000.0;
+            if (DEBUG) System.out.println((end - start) / 1000000000.0 + "s " + numPrimes + " " + sumPrimes);
 
-            System.out.println((end - start) / 1000000000.0 + "s " + numPrimes + " " + sumPrimes);
+            writer.write(runtime + "s " + numPrimes + " " + sumPrimes);
+            writer.close();
         }
         catch (IOException e)
         {
@@ -78,6 +82,8 @@ public class Main
     }
 }
 
+// Apparently, the Java docs for Thread use PrimeThread as an example class. What a coincidence
+// https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html
 class PrimeThread extends Thread
 {
     public int lowerbound;
@@ -102,27 +108,7 @@ class PrimeThread extends Thread
             }
         }
     }
-    // This primality test uses a common improvement of trial division,
-    // using the fact that every prime is of the form 6k+1, or 6k-1,
-    // for positive integer k.
-
-    // Proof: Any natural number n can be expressed in the form 6k+r,
-    //        and n % 6 yields a remainder r in [0,5].
-    // If r = 0, 2, or 4, n must be even, since r is even and 6 is even.
-    // In other words, 6k, 6k+2, and 6k+4 are all even, and therefore composite.
-    // If r = 3, n must be a multiple of 3, and therefore composite.
-    // Therefore, all primes above 3 must be of the form 6k+1 or 6k-1.
-
-    // Method: Another way to implement trial division is to divide n by
-    // every prime below or equal to sqrt(n), instead of every number,
-    // since if you check divisibility by a prime, checking divisibility
-    // by all its multiples is unnecessary.
-    // However, this requires building a list of known primes with no gaps,
-    // which would be painful for me to synchronize.
-
-    // Doing trial division by every number of the form 6k+1 or 6k-1
-    // guarantees we test divisibility by every prime <= sqrt(n).
-
+    
     // This primality test implements the algorithm in the README.
     public static boolean isPrime(int n)
     {
