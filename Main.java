@@ -8,19 +8,17 @@ import java.io.*;
 import java.util.concurrent.atomic.*;
 
 // ANSWER: there are 5761455 primes < 10^8
+// The sum is 279209790387276
 
 // Apparently, the Java docs for Thread use PrimeThread as an example class. What a coincidence
 // https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html
-public class PrimeThread extends Thread
+
+public class Main
 {
-    // Must use AtomicIntegers since primitive ints aren't thread safe
-    public static AtomicLong numPrimes = new AtomicLong(0);
-    public static AtomicLong sumPrimes = new AtomicLong(0);
+    public static int NUM_THREADS = 8;
+    public static int UPPER_BOUND = 100000000;
 
     public static FileWriter writer = null;
-
-    private int lowerbound;
-    private int upperbound;
 
     public static void main(String[] args) throws IOException
     {
@@ -37,31 +35,55 @@ public class PrimeThread extends Thread
             final long start = System.nanoTime();
 
             // Create threads and distribute computation
-            int numThreads = 8;
-            int upperbound = 100000000;
-            int numsPerThread = upperbound / numThreads;
-            for (int i = 0; i < numThreads; i++)
+            PrimeThread[] threads = new PrimeThread[NUM_THREADS];
+            int numsPerThread = UPPER_BOUND / NUM_THREADS;
+            for (int i = 0; i < NUM_THREADS; i++)
             {
                 int low = i * numsPerThread;
                 int high = (i+1) * (numsPerThread) - 1;
 
-                PrimeThread thread = new PrimeThread(low, high);
-                thread.start();
-                System.out.println("Thread " + i + " started; checking [" + thread.lowerbound + "," + thread.upperbound + "]");
-                //System.out.println("Thread " + i + " done");
+                threads[i] = new PrimeThread(low, high);
+                threads[i].start();
+                System.out.println("Thread " + i + " started; checking [" + threads[i].lowerbound + "," + threads[i].upperbound + "]");
             }
 
+            int numPrimes = 0;
+            long sumPrimes = 0;
+
+            // Iterate over all threads and ensure they finish execution, and sum totals
+            try
+            {
+                for (int i = 0; i < NUM_THREADS; i++)
+                {
+                    threads[i].join();
+                    System.out.println("Thread " + i + " finished:");
+                    System.out.println("found " + threads[i].numPrimesFound + " primes");
+                    System.out.println("sum: " + threads[i].sumPrimesFound);
+                    numPrimes += threads[i].numPrimesFound;
+                    sumPrimes += threads[i].sumPrimesFound;
+                }
+            }
+            catch (InterruptedException e)
+            {}
             writer.close();
 
             final long end = System.nanoTime();
 
-            System.out.println((end - start) / 1000000.0 + " " + numPrimes + " " + sumPrimes);
+            System.out.println((end - start) / 1000000000.0 + "s " + numPrimes + " " + sumPrimes);
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
     }
+}
+
+class PrimeThread extends Thread
+{
+    public int lowerbound;
+    public int upperbound;
+    public int numPrimesFound;
+    public long sumPrimesFound;
 
     public PrimeThread(int lowerbound, int upperbound)
     {
@@ -71,27 +93,14 @@ public class PrimeThread extends Thread
 
     public void run()
     {
-        int numPrimesFound = 0;
-        long sumPrimesFound = 0;
         for (int i = this.lowerbound; i <= this.upperbound; i++)
         {
             if (isPrime(i))
             {
-                numPrimesFound++;
-                sumPrimesFound += i;
-                try
-                {
-                    writer.write(i + "\n");
-                }
-                catch (IOException e)
-                {}
+                this.numPrimesFound++;
+                this.sumPrimesFound += i;
             }
         }
-        System.out.println("found " + numPrimesFound);
-        numPrimes.addAndGet(numPrimesFound);
-        System.out.println("total: " + numPrimes);
-        sumPrimes.addAndGet(sumPrimesFound);
-        System.out.println("total sum: " + sumPrimes);
     }
     // This primality test uses a common improvement of trial division,
     // using the fact that every prime is of the form 6k+1, or 6k-1,
@@ -123,10 +132,10 @@ public class PrimeThread extends Thread
         // Composite if divisible by 6k,6k+2,6k+3, or 6k+4
         if (n % 2 == 0 || n % 3 == 0) return false;
 
-        for (int i = 6; i*i <= n; i += 6)
+        for (int i = 5; i*i <= n; i += 6)
         {
             // Test divisibility by 6k+1 and 6k-1
-            if (n % (i+1) == 0 || (n % (i-1) == 0)) return false;
+            if (n % (i) == 0 || (n % (i+2) == 0)) return false;
         }
         return true;
     }

@@ -1,3 +1,4 @@
-primes.txt
+primes*.txt
 test.java
 *.class
+primesslow.java
