@@ -6,10 +6,8 @@
 import java.util.*;
 import java.io.*;
 
-// ANSWER: there are 5761455 primes < 10^8
-// The sum is 279209790387276
-//            27920979038727699999773
-
+// ANSWER: There are 5761455 primes < 10^8
+//         Their sum is 279209790387276
 
 public class Main
 {
@@ -74,6 +72,7 @@ public class Main
 
             // Write runtime and prime totals to primes.txt
             writer.write(runtime + " " + numPrimes + " " + sumPrimes + "\n");
+
             // Write 10 largest primes in increasing order
             int numLargest = 10;
             Collections.sort(PrimeThread.temp);
@@ -106,6 +105,7 @@ class PrimeThread extends Thread
         this.upperbound = upperbound;
     }
 
+    // Main sequence of operations to be run by each thread
     public void run()
     {
         for (int i = this.lowerbound; i <= this.upperbound; i++)
@@ -123,7 +123,7 @@ class PrimeThread extends Thread
             }
         }
     }
-    
+
     // This primality test implements the algorithm in the README.
     public static boolean isPrime(int n)
     {
