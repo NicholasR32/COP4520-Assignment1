@@ -17,7 +17,7 @@ public class Main
     public static int UPPER_BOUND = 100000000;
 
     public static FileWriter writer = null;
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     public static void main(String[] args) throws IOException
     {
@@ -69,10 +69,18 @@ public class Main
 
             // Stop timer
             final long end = System.nanoTime();
-            long runtime = (end - start) / 1000000000.0;
-            if (DEBUG) System.out.println((end - start) / 1000000000.0 + "s " + numPrimes + " " + sumPrimes);
+            double runtime = (end - start) / 1000000000.0;
+            if (DEBUG) System.out.println((end - start) / 1000000000.0 + " " + numPrimes + " " + sumPrimes);
 
-            writer.write(runtime + "s " + numPrimes + " " + sumPrimes);
+            // Write runtime and prime totals to primes.txt
+            writer.write(runtime + " " + numPrimes + " " + sumPrimes);
+            // Write 10 largest primes in increasing order
+            int numLargest = 10;
+            Collections.sort(PrimeThread.temp);
+            for (int i = PrimeThread.temp.size()-numLargest-1; i < PrimeThread.temp.size(); i++)
+            {
+                writer.write(PrimeThread.temp.get(i) + "\n");
+            }
             writer.close();
         }
         catch (IOException e)
@@ -90,6 +98,7 @@ class PrimeThread extends Thread
     public int upperbound;
     public int numPrimesFound;
     public long sumPrimesFound;
+    public static ArrayList<Integer> temp = new ArrayList<>();
 
     public PrimeThread(int lowerbound, int upperbound)
     {
@@ -105,6 +114,12 @@ class PrimeThread extends Thread
             {
                 this.numPrimesFound++;
                 this.sumPrimesFound += i;
+
+                // Really iffy way of getting the top 10 primes
+                if (i > 99990000)
+                {
+                    PrimeThread.temp.add(i);
+                }
             }
         }
     }
