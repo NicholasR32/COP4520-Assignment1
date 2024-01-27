@@ -8,7 +8,7 @@ import java.io.*;
 
 // ANSWER: there are 5761455 primes < 10^8
 // The sum is 279209790387276
-
+//            27920979038727699999773
 
 
 public class Main
@@ -73,11 +73,11 @@ public class Main
             if (DEBUG) System.out.println((end - start) / 1000000000.0 + " " + numPrimes + " " + sumPrimes);
 
             // Write runtime and prime totals to primes.txt
-            writer.write(runtime + " " + numPrimes + " " + sumPrimes);
+            writer.write(runtime + " " + numPrimes + " " + sumPrimes + "\n");
             // Write 10 largest primes in increasing order
             int numLargest = 10;
             Collections.sort(PrimeThread.temp);
-            for (int i = PrimeThread.temp.size()-numLargest-1; i < PrimeThread.temp.size(); i++)
+            for (int i = PrimeThread.temp.size()-numLargest; i < PrimeThread.temp.size(); i++)
             {
                 writer.write(PrimeThread.temp.get(i) + "\n");
             }

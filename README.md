@@ -13,7 +13,7 @@ The following will be printed to `primes.txt`:
 ## Assignment 1 - Finding prime numbers using concurrent threads
 This program uses 8 concurrent threads to find all primes between 1 and 10^8.
 
-The use of multithreading increased the overall computation speed by around 4-5 times, given that a single thread could complete the task in 23-26 seconds, while 8 threads can complete it in 5-6 seconds.
+The use of multithreading increased the overall computation speed by around 4-5 times, given that a single thread could complete the task in 23-26 seconds, while 8 threads can complete it in 5-6 seconds (at least on my machine, your test run may be slower, but hopefully under 30 seconds).
 
 ## Parallelization
 This program splits up the range of numbers to search into equal length intervals among each thread, in this case 10^8 numbers divided by 8 threads. Thread 0 will check the first group of 12500000 numbers, Thread 1 the second group, etc. While the amount of work is technically larger for the last few threads, the difference shouldn't be too significant as most of the numbers checked are of the same magnitude.
